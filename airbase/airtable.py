@@ -106,8 +106,6 @@ class Airtable(BaseAirtable):
         self.api_key = api_key
         self.timeout = timeout
         self.semaphore = HTTPSemaphore(value=50, interval=1, max_calls=5)
-
-    async def __aenter__(self):
         conn = TCPConnector(limit=100)
         timeout = ClientTimeout(total=self.timeout)
         self._session = ClientSession(
@@ -116,11 +114,12 @@ class Airtable(BaseAirtable):
             timeout=timeout,
             # raise_for_status=self.raise_for_status,
         )
+
+    async def __aenter__(self) -> "Airtable":
         return self
 
-    async def __aexit__(self, *err):
-        await self._session.close()
-        self._session = None
+    async def __aexit__(self, *err) -> None:
+        await self.close()
 
     @property
     def api_key(self):
@@ -131,6 +130,10 @@ class Airtable(BaseAirtable):
     def api_key(self, key: str):
         self._api_key = key or str(os.environ.get("AIRTABLE_API_KEY"))
         self.auth = {"Authorization": f"Bearer {self.api_key}"}
+
+    async def close(self) -> None:
+        await self._session.close()
+        self._session = None
 
     async def get_bases(self) -> Optional[List]:  # noqa: F821
         async with self.semaphore:
