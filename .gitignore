@@ -20,3 +20,5 @@ coverage.xml
 .python-version
 
 test.py
+test_sync.py
+airbase_sync/
