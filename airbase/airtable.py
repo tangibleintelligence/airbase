@@ -435,8 +435,8 @@ class Table(BaseAirtable):
         for sub_list in records_iter:
             tasks.append(asyncio.create_task(func(sub_list, typecast)))
         results = await asyncio.gather(*tasks)
-        if any(not r for r in results):
-            return False
+        if any(not self._is_success(r) for r in results):
+            return {"status": "One or more Records failed", "results": results}
         else:
             return True
 
@@ -540,12 +540,12 @@ class Table(BaseAirtable):
             )
         if self._is_success(res):
             logger.info(f"Posted: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to post: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def _post_records(
         self, records: list, typecast: bool = False
@@ -564,12 +564,12 @@ class Table(BaseAirtable):
             )
         if self._is_success(res):
             logger.info(f"Posted: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to post: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def post_records(
         self, records: list, typecast: bool = False
@@ -612,12 +612,12 @@ class Table(BaseAirtable):
             res = await self._request("patch", url, json=data, headers=headers)
         if self._is_success(res):
             logger.info(f"Updated: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to update: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def _update_records(
         self, records: list, typecast: bool = False
@@ -638,12 +638,12 @@ class Table(BaseAirtable):
             )
         if self._is_success(res):
             logger.info(f"Updated: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to update: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def update_records(
         self, records: list, typecast: bool = False
@@ -676,12 +676,12 @@ class Table(BaseAirtable):
             res = await self._session.request("delete", url)
         if self._is_success(res):
             logger.info(f"Deleted: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to delete: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def _delete_records(self, records: list, *args, **kwargs) -> bool:
         """
@@ -704,12 +704,12 @@ class Table(BaseAirtable):
             )
         if self._is_success(res):
             logger.info(f"Deleted: {message}")
-            return True
+            return await res.json()
         else:
             data = await self._get_data(res)
             error_msg = f"{res.status}: Failed to delete: {message} -> '{data.get('error').get('message')}'"  # noqa:E501
             self.raise_or_log_error(error_msg)
-            return False
+            return await res.json()
 
     async def delete_records(self, records: list) -> bool:
         """
